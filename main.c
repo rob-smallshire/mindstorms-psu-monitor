@@ -68,7 +68,7 @@ int main(void) {
     init_demo();
 
     DDRA = 0x01;
-    PORTA = 0xFE; // Enable pullups
+    PORTA = 0x7E; // Enable pullups
 
     /* initialise TWI Slave */
     twi_slave_initialise();
@@ -85,19 +85,20 @@ int main(void) {
 */
     while (1) {
 
-        uint8_t power_source __attribute__((unused)) = PINA & _BV(PINA7);
+        // A7 is SCL on ATtiny20
+        //uint8_t power_source __attribute__((unused)) = PINA & _BV(PINA7);
         uint8_t battery_charged __attribute__((unused)) = (PINA & _BV(PINA6));
         uint8_t battery_charging __attribute__((unused)) = (PINA & _BV(PINA5));
         uint8_t battery_low __attribute__((unused)) = ~PINA & _BV(PINA4);
         uint8_t switch_a __attribute__((unused)) = PINA & _BV(PINA2);
         uint8_t switch_b __attribute__((unused)) = PINA & _BV(PINA3);
 
-        if (switch_b) {
-            PORTA |= _BV(PORTA0);  // Use PORTA to display count1 data
-        }
-        else {
-            PORTA &= ~_BV(PORTA0);
-        }
+//        if (switch_b) {
+//            PORTA |= _BV(PORTA0);  // Use PORTA to display count1 data
+//        }
+//        else {
+//            PORTA &= ~_BV(PORTA0);
+//        }
         _delay_ms(1000);
     }
     return 0;
@@ -147,10 +148,10 @@ uint8_t twi_data_to_master(void) {
  */
 void twi_data_from_master(uint8_t data) {
     //command = data;
-//    if (data) {
-//        PORTA |= _BV(PORTA0);
-//    }
-//    else {
-//        PORTA &= ~_BV(PORTA0);
-//    }
+    if (data) {
+        PORTA |= _BV(PORTA0);
+    }
+    else {
+        PORTA &= ~_BV(PORTA0);
+    }
 }
