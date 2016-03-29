@@ -1,5 +1,3 @@
-
-
 /* This file has been prepared for Doxygen automatic documentation generation.*/
 /*! \file *********************************************************************
 *
@@ -52,8 +50,8 @@
 
 #include "drvr.h"
 
-                        
-/* General TWI Master staus codes */                      
+
+/* General TWI Master staus codes */
 #define TWI_ADDRESS_STOP_MATCH            0x40  // Address/Stop Match has received  
 #define TWI_BUS_COLLISION                 0x08  // Bus Collision 
 #define TWI_BUS_ERROR                     0x04  // Bus Error 
@@ -78,12 +76,14 @@
  *  \note  The peripheral must be initialized in advance.
  *
  */
-void twi_slave_initialise(void){    
-   TWSA = (uint8_t)(TWI_ADDR << 1);     // Set TWI slave address. 
-   TWI_SLAVE_DATA = 0xFF;               // Default content = SDA released.
-   TWI_SLAVE_CTRLA = (uint8_t)((1<<TWI_INTERFACE_ENAB)|(1<<TWI_SDI_HOLD_EANB)|              // Enable TWI-interface and release TWI pins.
-           (1<<TWI_DATA_INT_ENAB)|(1<<TWI_ADDR_STOP_INT_ENAB)|(1<<TWI_STOP_INT_ENAB));      // Enable TWI  Interupts.
-} 
+void twi_slave_initialise(void) {
+    TWSA = (uint8_t) (TWI_ADDR << 1);     // Set TWI slave address.
+    TWI_SLAVE_DATA = 0xFF;               // Default content = SDA released.
+    TWI_SLAVE_CTRLA = (uint8_t) ((1 << TWI_INTERFACE_ENAB) | (1 << TWI_SDI_HOLD_EANB) |
+                                 // Enable TWI-interface and release TWI pins.
+                                 (1 << TWI_DATA_INT_ENAB) | (1 << TWI_ADDR_STOP_INT_ENAB) |
+                                 (1 << TWI_STOP_INT_ENAB));      // Enable TWI  Interupts.
+}
 
 
 /*! \brief  TWI Interrupt Service Routine
@@ -94,44 +94,44 @@ void twi_slave_initialise(void){
  *Asserts ACK, holds clock low until execution of a write to TWI_SLAVE_CTRLB register
  *
 ****************************************************************************/
-ISR(TWI_SLAVE_vect)
-{
-        uint8_t status = TWI_SLAVE_STATUS & 0xC0;
-       
- PORTB = 1;    
-        if (status & TWI_DATA_INTERRUPT) {
-                if (TWI_SLAVE_STATUS & (1<<TWI_RD_WR_DIR)) {
-                        /*Master Reads data from slave*/
-                        PORTB |= 4;
-                        TWI_SLAVE_DATA = twi_data_to_master(); // This function gets data from the application and loads it into the TWI_SLAVE_DATA (Two Wire Send Data) register             
-                  
-                        TWI_SLAVE_CTRLB = (uint8_t) ((1<<TWI_SLAVE_CMD1)|(1<<TWI_SLAVE_CMD0)); // release SCL
-                } else {
-                        /* Master Write */
-                        /* Here we read the base address */
-                        /* If the base address is with in the range save it, else NACK the Master */
-                        TWI_SLAVE_CTRLB = (uint8_t) ((1<<TWI_SLAVE_CMD1)|(1<<TWI_SLAVE_CMD0));
- twi_data_from_master(TWI_SLAVE_DATA) ;  // Callback function: data from master to application                       
-                }
-        } else if (status & TWI_ADDRESS_STOP_MATCH) {
-                /* Address match can happen due to Collision */
-                if (TWI_SLAVE_STATUS & TWI_BUS_COLLISION) {
-                        /* Clear the Collision Flag */
-                        TWI_SLAVE_STATUS = TWI_SLAVE_STATUS;
-                        /* Wait for any Start Condition */
-                        TWI_SLAVE_CTRLB = (uint8_t) (1<<TWI_SLAVE_CMD1);
-                } else {
-                        /* Address Match */
-                        if (TWI_SLAVE_STATUS & (1<<TWAS)) {
-                                /* Execute ACK and then receive next byte or set TWDIF to send the data */                      
-                                TWI_SLAVE_CTRLB = (uint8_t)((1<<TWI_SLAVE_CMD1)|(1<<TWI_SLAVE_CMD0));  
-                        }  else {
-                                /* Stop Condition */
-                                /* Wait for any Start Condition */
-                                TWI_SLAVE_CTRLB = (uint8_t) (1<<TWI_SLAVE_CMD1);
-                        }
-                }
+ISR(TWI_SLAVE_vect) {
+    uint8_t status = TWI_SLAVE_STATUS & 0xC0;
+
+    PORTB = 1;
+    if (status & TWI_DATA_INTERRUPT) {
+        if (TWI_SLAVE_STATUS & (1 << TWI_RD_WR_DIR)) {
+            /*Master Reads data from slave*/
+            PORTB |= 4;
+            TWI_SLAVE_DATA = twi_data_to_master(); // This function gets data from the application and loads it into the TWI_SLAVE_DATA (Two Wire Send Data) register
+
+            TWI_SLAVE_CTRLB = (uint8_t) ((1 << TWI_SLAVE_CMD1) | (1 << TWI_SLAVE_CMD0)); // release SCL
+        } else {
+            /* Master Write */
+            /* Here we read the base address */
+            /* If the base address is with in the range save it, else NACK the Master */
+            TWI_SLAVE_CTRLB = (uint8_t) ((1 << TWI_SLAVE_CMD1) | (1 << TWI_SLAVE_CMD0));
+            twi_data_from_master(
+                    TWI_SLAVE_DATA);  // Callback function: data from master to application
         }
+    } else if (status & TWI_ADDRESS_STOP_MATCH) {
+        /* Address match can happen due to Collision */
+        if (TWI_SLAVE_STATUS & TWI_BUS_COLLISION) {
+            /* Clear the Collision Flag */
+            TWI_SLAVE_STATUS = TWI_SLAVE_STATUS;
+            /* Wait for any Start Condition */
+            TWI_SLAVE_CTRLB = (uint8_t) (1 << TWI_SLAVE_CMD1);
+        } else {
+            /* Address Match */
+            if (TWI_SLAVE_STATUS & (1 << TWAS)) {
+                /* Execute ACK and then receive next byte or set TWDIF to send the data */
+                TWI_SLAVE_CTRLB = (uint8_t) ((1 << TWI_SLAVE_CMD1) | (1 << TWI_SLAVE_CMD0));
+            } else {
+                /* Stop Condition */
+                /* Wait for any Start Condition */
+                TWI_SLAVE_CTRLB = (uint8_t) (1 << TWI_SLAVE_CMD1);
+            }
+        }
+    }
 }
 
 /*! \brief  TWI_bus_error_status function
@@ -143,16 +143,14 @@ ISR(TWI_SLAVE_vect)
  *  A twi bus error will result in disabling TWI Interface and re-Initialising the TWI Slave
  */
 
-void twi_bus_error_check (void)
-{
-   if (TWI_SLAVE_STATUS & TWI_BUS_ERROR)
-   {
-      /* Clear all Flags */
-      TWI_SLAVE_STATUS = TWI_SLAVE_STATUS;
-      /* Disable TWI Interface */
-      TWSCRA = 0x00u;
+void twi_bus_error_check(void) {
+    if (TWI_SLAVE_STATUS & TWI_BUS_ERROR) {
+        /* Clear all Flags */
+        TWI_SLAVE_STATUS = TWI_SLAVE_STATUS;
+        /* Disable TWI Interface */
+        TWSCRA = 0x00u;
 
-      /* Re-Initialise TWI Slave */ 
-      twi_slave_initialise();      
-   }    
+        /* Re-Initialise TWI Slave */
+        twi_slave_initialise();
+    }
 }

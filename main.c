@@ -1,4 +1,3 @@
-
 /* This file has been prepared for Doxygen automatic documentation generation.*/
 /*! \file *********************************************************************
 *
@@ -53,36 +52,30 @@
 
 /* Prototypes here */
 
-void          delay100ms(unsigned char);
-void          init_demo(void);
+void init_demo(void);
 
 /* End of prototypes */
 /*!  Two variables used to send data to TWI Slave */
-unsigned char count1, command; 
+unsigned char command;
 
-/*! 100 msec delay to be tuned by the user, based on choice of AVR and its clock speed */
-#define DELAY_VAL_100_MS          0xFFFF-0xe000;  //User: this is an example value when CPU clock speed is 8 MHz.  Adjust this value get
-                                                  // your delay value, 100 msec if desired
-#define YES                       1
-#define NO                        0
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
 /*! Enable/disable LEDs on Slave STK500 or other demo board */
-#define LED_DEMO_ON               YES            // PORTA is to display 8 bits of count1 value and PA7 is high while in TWI interrupt servie
-#define LED_OUT_CTRL              DDRA           // for defining outputs on LEDs.   May be changed to another port or eliminated.
-#define LED_DATA                  PORTA          // For diaplaying count1 value on LEDa
 
-int main(void)
-{
-  
-  /* initialize Demo */
-  init_demo();
-  
-  /* initialise TWI Slave */
-  twi_slave_initialise();
-  
-  /* Enable interrupts. */
-  sei();
-  
+int main(void) {
+
+    /* initialize Demo */
+    init_demo();
+
+    DDRA = 0x01;
+    PORTA = 0xFE; // Enable pullups
+
+    /* initialise TWI Slave */
+    twi_slave_initialise();
+
+    /* Enable interrupts. */
+    sei();
+
 
 /*! /brief example code
 *
@@ -90,32 +83,38 @@ int main(void)
 * If LED_DEMO_ON is set to YES, 7 LEDs on Slave board will show the changing value oc count1
  *
 */
-    while(1){
-    count1++;
-    
-#if LED_DEMO_ON
-   LED_DATA = ~count1;  // Use PORTA to display count1 data
-        _delay_ms(1000);
-#endif
-    }
+    while (1) {
 
-  
+        uint8_t power_source __attribute__((unused)) = PINA & _BV(PINA7);
+        uint8_t battery_charged __attribute__((unused)) = (PINA & _BV(PINA6));
+        uint8_t battery_charging __attribute__((unused)) = (PINA & _BV(PINA5));
+        uint8_t battery_low __attribute__((unused)) = ~PINA & _BV(PINA4);
+        uint8_t switch_a __attribute__((unused)) = PINA & _BV(PINA2);
+        uint8_t switch_b __attribute__((unused)) = PINA & _BV(PINA3);
+
+        if (switch_b) {
+            PORTA |= _BV(PORTA0);  // Use PORTA to display count1 data
+        }
+        else {
+            PORTA &= ~_BV(PORTA0);
+        }
+        _delay_ms(1000);
+    }
+    return 0;
+
 }
+#pragma clang diagnostic pop
+
 /*! /user initialalize function
 *
 *  Set tinyAVR clock speed from default 1 MHz to 8 Mhz
-*  
-*  IF LED_DEMO is enabled, set LED port pins to outputs
+*
 */
-void init_demo(void){
+void init_demo(void) {
 
     /* Clear CLKPSR bits to get AVR to run at 8 MHz  */
-  CCP = 0xD8; // write access signature to Configuration Change Protection Register
-  CLKPSR = 0;  // This should change clock from 1 MHz default to 8 MHz
-  
-#if LED_DEMO_ON
-  LED_OUT_CTRL = 0x7f;  //PA7 is SCL on tiny20/tiny40 AVR
-#endif
+    CCP = 0xD8; // write access signature to Configuration Change Protection Register
+    CLKPSR = 0;  // This should change clock from 1 MHz default to 8 MHz
 }
 
 /*!  \brief  TWI slave twi_data_to_master driver callback function
@@ -128,11 +127,11 @@ void init_demo(void){
  *   The user may change this function's respoonse to suit a particular application
  *
  */
-unsigned char twi_data_to_master(void){
-  unsigned char data_to_master;
-    if (command == 1) data_to_master = count1;  
-    else data_to_master = ~count1;  
-  return data_to_master;
+uint8_t twi_data_to_master(void) {
+    unsigned char data_to_master;
+    if (command == 1) data_to_master = PINA;
+    else data_to_master = PINA;
+    return data_to_master;
 }
 
 
@@ -146,8 +145,12 @@ unsigned char twi_data_to_master(void){
  *   Output: User code receives new data via the function returning a value
  *  
  */
-void twi_data_from_master(unsigned char data){
-
-   command = data;
-
+void twi_data_from_master(uint8_t data) {
+    //command = data;
+//    if (data) {
+//        PORTA |= _BV(PORTA0);
+//    }
+//    else {
+//        PORTA &= ~_BV(PORTA0);
+//    }
 }

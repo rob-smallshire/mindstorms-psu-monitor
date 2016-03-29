@@ -69,7 +69,7 @@
  *   Output: this function returns a value in count1 or ~count1 based on the
  *   value of command, previously sent from the master to the slave and this code
  */
-unsigned char twi_data_to_master(void);
+uint8_t twi_data_to_master(void);
 
 
 /*!  \brief  TWI slave twi_data_from_master driver callback function
@@ -82,7 +82,7 @@ unsigned char twi_data_to_master(void);
  *   Output: this function places data into the application code
  *
  */
-void twi_data_from_master(unsigned char data);
+void twi_data_from_master(uint8_t data);
 
 
 /*! \brief  TWI slave's initialization function
