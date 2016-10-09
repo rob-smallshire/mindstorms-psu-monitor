@@ -83,6 +83,9 @@ int main(void) {
 * If LED_DEMO_ON is set to YES, 7 LEDs on Slave board will show the changing value oc count1
  *
 */
+    // Enable power output
+    PORTA |= _BV(PORTA0);
+
     while (1) {
 
         // A7 is SCL on ATtiny20
